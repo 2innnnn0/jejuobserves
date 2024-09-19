@@ -1,42 +1,46 @@
+import streamlit as st
+import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
-import rasterio
 
-# NDVI 계산 함수
-def calculate_ndvi(nir_band, red_band):
-    ndvi = (nir_band - red_band) / (nir_band + red_band)
-    return ndvi
+# Title for the Streamlit app
+st.title("NDVI Analysis")
 
-# 위성 이미지 파일 경로 (예시 파일 경로)
-red_band_path = 'imagesets/Clipping_16/K3A_20231031050356_47479_00072313_L1R_PS-011/K3A_20231031050356_47479_00072313_L1R_PR.tif'
-nir_band_path = 'imagesets/Clipping_16/K3A_20231031050356_47479_00072313_L1R_PS-011/K3A_20231031050356_47479_00072313_L1R_PN.tif'
+# Upload the TIF image
+# uploaded_file = st.file_uploader("Upload a TIF file", type=["tif", "tiff"])
+uploaded_file = 'data/ndvi_cropped_5000_6000.tif'
 
-# Red 밴드와 NIR 밴드 읽기 및 크기 확인
-with rasterio.open(red_band_path) as red_src:
-    red_band = red_src.read(1).astype(float)
-    width = red_src.width
-    height = red_src.height
-    print(f"Red band image size: {width} x {height}")
+if uploaded_file is not None:
+    # Read the TIF file
+    with rasterio.open(uploaded_file) as src:
+        st.write("Image loaded successfully")
+        
+        # Display basic image info
+        st.write(f"Image width: {src.width}")
+        st.write(f"Image height: {src.height}")
+        st.write(f"Number of bands: {src.count}")
+        
+        # Check if the file contains at least 2 bands (Red and NIR)
+        if src.count < 2:
+            st.error("The TIF file must contain at least two bands for NDVI calculation.")
+        else:
+            # Read the bands for NDVI calculation
+            red_band = src.read(1).astype(float)  # Assuming red band is the first one
+            nir_band = src.read(2).astype(float)  # Assuming NIR band is the second one
+            
+            # Calculate NDVI
+            ndvi = (nir_band - red_band) / (nir_band + red_band)
+            ndvi = np.clip(ndvi, -1, 1)  # Clipping the NDVI values between -1 and 1
 
-with rasterio.open(nir_band_path) as nir_src:
-    nir_band = nir_src.read(1).astype(float)
-    nir_width = nir_src.width
-    nir_height = nir_src.height
-    print(f"NIR band image size: {nir_width} x {nir_height}")
+            # Display NDVI image
+            st.subheader("NDVI Image")
+            fig, ax = plt.subplots()
+            cax = ax.imshow(ndvi, cmap='RdYlGn')
+            fig.colorbar(cax, ax=ax)
+            st.pyplot(fig)
 
-# 원하는 영역 지정 (예: x_min, x_max, y_min, y_max)
-x_min, x_max = 5000, 10000  # 가로 방향 범위
-y_min, y_max = 5000, 10000  # 세로 방향 범위
-
-# 선택한 영역에 대해 NDVI 계산
-red_band_cropped = red_band[y_min:y_max, x_min:x_max]
-nir_band_cropped = nir_band[y_min:y_max, x_min:x_max]
-
-ndvi_cropped = calculate_ndvi(nir_band_cropped, red_band_cropped)
-
-# 선택한 영역의 NDVI 시각화
-plt.figure(figsize=(10, 10))
-plt.imshow(ndvi_cropped, cmap='RdYlGn')
-plt.colorbar()
-plt.title('NDVI (Cropped Area)')
-plt.show()
+            # Display histogram of NDVI values
+            st.subheader("NDVI Histogram")
+            fig, ax = plt.subplots()
+            ax.hist(ndvi.flatten(), bins=50, color='green', alpha=0.7)
+            st.pyplot(fig)
