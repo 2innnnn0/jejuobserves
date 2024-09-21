@@ -15,8 +15,26 @@ from rasterio.io import MemoryFile
 
 # OpenAI API 키 설정 (환경 변수로 설정하거나 여기에 직접 추가)
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+def show_image_from_s3(bucket_name, key, aws_access_key_id, aws_secret_access_key, caption=""):
+    """S3에서 이미지를 불러와 Streamlit에 표시하는 함수"""
+    # boto3 클라이언트 설정
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key
+    )
 
-# st.write(os.getcwd()) # /mount/src/jejuobserves
+    # S3에서 이미지 파일 읽어오기
+    response = s3.get_object(Bucket=bucket_name, Key=key)
+    file_data = response['Body'].read()
+
+    # 이미지 로드
+    image = Image.open(BytesIO(file_data))
+
+    return image
+
+# OpenAI API 키 설정 (환경 변수로 설정하거나 여기에 직접 추가)
+# OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 
 # Streamlit secrets를 이용하여 자격 증명 설정
 AWS_ACCESS_KEY_ID = st.secrets["AWS_ACCESS_KEY_ID"]
@@ -42,8 +60,13 @@ def read_tif_from_s3(bucket_name, key):
 
 # S3 버킷 정보 (S3)
 bucket_name = 'datapopcorn'
-nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로  'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif' 
-red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로  'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'
+nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로 
+# nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif' 
+# nir_key = 'tif/demo_PN.tif' 
+red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로 
+# red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'
+# red_key = 'tif/demo_PR.tif'
+thumbnail_key = 'tif/demo_adjusted_image.jpg'
 
 # NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
 nir_band, nir_transform, nir_width, nir_height = read_tif_from_s3(bucket_name, nir_key)
@@ -51,7 +74,7 @@ red_band, red_transform, red_width, red_height = read_tif_from_s3(bucket_name, r
 # # 전체 NIR 및 RED 파일 경로 (로컬)
 # nir_file = "data/PN.tif"
 # red_file = "data/PR.tif"
-thumbnail_path = "data/adjusted_image.jpg"
+# thumbnail_path = "data/demo_adjusted_image.jpg"
 
 # # OpenAI API 호출 함수
 # def analyze_ndvi(ndvi_result):
@@ -129,7 +152,8 @@ st.subheader("Select the number of tiles")
 num_tiles = st.slider("Number of tiles per row and column", min_value=2, max_value=16, value=8)
 
 # 썸네일 이미지 로드
-thumbnail_img = Image.open(thumbnail_path)
+# thumbnail_img = Image.open(thumbnail_path) # 로컬
+thumbnail_img = show_image_from_s3(bucket_name, thumbnail_key, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) # S3
 img_width, img_height = thumbnail_img.size
 
 # 이미지 크기 및 타일 크기 계산
@@ -139,41 +163,46 @@ tile_height = nir_height // num_tiles
 # 이미지에 그리기 위한 ImageDraw 객체 생성
 thumbnail_draw = ImageDraw.Draw(thumbnail_img)
 
-# 폰트 설정 (기본 폰트)
-# try:
-#     font = ImageFont.truetype("arial.ttf", 14)  # 시스템에 폰트가 있는 경우
-# except IOError:
-#     font = ImageFont.load_default()  # 폰트가 없는 경우 기본 폰트 사용
+# 이미지 크기 구하기
+width, height = thumbnail_img.size
 
-# 격자와 타일 인덱스를 이미지에 그리기
-for row in range(num_tiles):
-    for col in range(num_tiles):
-        # 타일의 좌상단과 우하단 좌표 계산
-        left = col * tile_width
-        upper = row * tile_height
-        right = left + tile_width
-        lower = upper + tile_height
-        
-        # 격자 그리기
-        thumbnail_draw.rectangle([left, upper, right, lower], outline="red", width=2)
-        
-        # 타일 중앙에 텍스트 표시
-        center_x = left + tile_width // 2
-        center_y = upper + tile_height // 2
-        text = f"({row},{col})"
-        # text_size = thumbnail_draw.textsize(text)
-        # thumbnail_draw.text((center_x - text_size[0] // 2, center_y - text_size[1] // 2), text, fill="red")
+# 격자 셀 크기 계산
+tile_width = width // num_tiles
+tile_height = height // num_tiles
 
-        # 텍스트 크기 계산 (getbbox 사용)
-        bbox = thumbnail_draw.textbbox((0, 0), text)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
+# 폰트 설정 (폰트 크기 200으로 설정)
+try:
+    font = ImageFont.truetype("Pretendard.ttf", 600)  # 폰트 크기를 더 키움
+except IOError:
+    font = ImageFont.load_default()  # 폰트 로드 실패 시 기본 폰트 사용
+
+# 텍스트 이미지를 확대하여 배치하는 방법
+for i in range(num_tiles):
+    for j in range(num_tiles):
+        text = f"({i},{j})"
         
-        # 텍스트 그리기 (중앙에 맞추기)
-        thumbnail_draw.text(
-            (center_x - text_width // 2, center_y - text_height // 2),
-            text, fill="red"
-        )
+        # 새로운 이미지에 텍스트 렌더링
+        text_img = Image.new('RGBA', (tile_width, tile_height), (255, 255, 255, 0))  # 투명 배경
+        text_draw = ImageDraw.Draw(text_img)
+        
+        # 텍스트 그리기
+        text_bbox = font.getbbox(text)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        text_x = (tile_width - text_width) // 2
+        text_y = (tile_height - text_height) // 2
+        text_draw.text((text_x, text_y), text, font=font, fill=(255, 0, 0))
+        
+        # 이미지에 텍스트 붙이기
+        thumbnail_img.paste(text_img, (j * tile_width, i * tile_height), text_img)
+        
+        # 격자 선 그리기 (가로, 세로)
+        thumbnail_draw.line([(j * tile_width, 0), (j * tile_width, height)], fill="red", width=20)  # 세로선
+        thumbnail_draw.line([(0, i * tile_height), (width, i * tile_height)], fill="red", width=20)  # 가로선
+
+# 마지막 오른쪽 및 아래쪽 선 그리기
+thumbnail_draw.line([(width-1, 0), (width-1, height)], fill="red", width=20)  # 오른쪽 경계선
+thumbnail_draw.line([(0, height-1), (width, height-1)], fill="red", width=20)  # 아래쪽 경계선
 
 # Streamlit에서 이미지 프리뷰로 보여주기
 st.subheader("Thumbnail with Grid Preview")
@@ -194,7 +223,8 @@ with col1:
     st.subheader("Thumbnail (BR.jpg) for Selected Tile")
     
     # BR.jpg 파일 열기
-    img = Image.open(thumbnail_path)
+    # img = Image.open(thumbnail_path) # 로컬
+    img = show_image_from_s3(bucket_name, thumbnail_key, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) # S3
     
     # 이미지 크기 계산
     img_width, img_height = img.size
