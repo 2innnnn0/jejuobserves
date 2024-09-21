@@ -31,7 +31,6 @@ s3 = boto3.client(
 def read_tif_from_s3(bucket_name, key):
     response = s3.get_object(Bucket=bucket_name, Key=key)
     file_data = response['Body'].read()
-    return file_data
 
     with MemoryFile(file_data) as memfile:
         with memfile.open() as dataset:
