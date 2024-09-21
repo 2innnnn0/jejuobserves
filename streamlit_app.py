@@ -51,7 +51,7 @@ red_band, red_transform, red_width, red_height = read_tif_from_s3(bucket_name, r
 # # 전체 NIR 및 RED 파일 경로 (로컬)
 # nir_file = "data/PN.tif"
 # red_file = "data/PR.tif"
-# thumbnail_path = "data/adjusted_image.jpg"
+thumbnail_path = "data/adjusted_image.jpg"
 
 # # OpenAI API 호출 함수
 # def analyze_ndvi(ndvi_result):
