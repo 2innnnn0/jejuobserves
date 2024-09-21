@@ -38,14 +38,19 @@ def read_tif_from_s3(bucket_name, key):
             return dataset.read(1), dataset.transform
 
 # S3 버킷 정보 (S3)
-# bucket_name = 'datapopcorn'
-# nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif'  # S3에 있는 NIR 파일 경로
-# red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'  # S3에 있는 RED 파일 경로
+bucket_name = 'datapopcorn'
+nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif'  # S3에 있는 NIR 파일 경로
+red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'  # S3에 있는 RED 파일 경로
+
+# NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
+nir_band, nir_transform = read_tif_from_s3(bucket_name, nir_key)
+red_band, red_transform = read_tif_from_s3(bucket_name, red_key)
+
 
 # 전체 NIR 및 RED 파일 경로 (로컬)
-nir_file = "data/PN.tif"
-red_file = "data/PR.tif"
-thumbnail_path = "data/adjusted_image.jpg"
+# nir_file = "data/PN.tif"
+# red_file = "data/PR.tif"
+# thumbnail_path = "data/adjusted_image.jpg"
 
 
 # OpenAI API 호출 함수
@@ -105,15 +110,10 @@ def calculate_ndvi(nir_band, red_band):
     ndvi = (nir - red) / (nir + red)
     return np.clip(ndvi, -1, 1)  # NDVI 범위를 [-1, 1]로 클립
 
-# 전체 NIR 및 RED 밴드 로드
+# 전체 NIR 및 RED 밴드 로드 (로컬)
 st.subheader("Loading Full NIR and RED Bands")
-nir_band, nir_transform, nir_width, nir_height = load_tiff(nir_file)  # NIR 밴드
-red_band, red_transform, red_width, red_height = load_tiff(red_file)  # RED 밴드
-
-# NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴
-# nir_band, nir_transform = read_tif_from_s3(bucket_name, nir_key)
-# red_band, red_transform = read_tif_from_s3(bucket_name, red_key)
-
+# nir_band, nir_transform, nir_width, nir_height = load_tiff(nir_file)  # NIR 밴드
+# red_band, red_transform, red_width, red_height = load_tiff(red_file)  # RED 밴드
 
 # 타일 수를 슬라이더로 선택
 st.subheader("Select the number of tiles")
