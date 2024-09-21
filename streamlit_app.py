@@ -47,12 +47,6 @@ nir_file = "data/PN.tif"
 red_file = "data/PR.tif"
 thumbnail_path = "data/adjusted_image.jpg"
 
-# NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴
-nir_band, nir_transform = read_tif_from_s3(bucket_name, nir_key)
-red_band, red_transform = read_tif_from_s3(bucket_name, red_key)
-
-
-
 
 # OpenAI API 호출 함수
 def analyze_ndvi(ndvi_result):
