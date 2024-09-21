@@ -40,7 +40,7 @@ def read_tif_from_s3(bucket_name, key):
             return dataset.read(1), dataset.transform
 
 # S3 버킷 정보 (S3)
-# bucket_name = 'datapopcorn'
+bucket_name = 'datapopcorn'
 nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif'  # S3에 있는 NIR 파일 경로
 red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'  # S3에 있는 RED 파일 경로
 
