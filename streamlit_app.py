@@ -41,9 +41,9 @@ def read_tif_from_s3(bucket_name, key):
             return dataset.read(1), dataset.transform
 
 # S3 버킷 정보 (S3)
-bucket_name = 's3://datapopcorn'
-nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif'  # S3에 있는 NIR 파일 경로
-red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'  # S3에 있는 RED 파일 경로
+bucket_name = 'datapopcorn'
+nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로
+red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로
 
 # NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
 nir_band, nir_transform = read_tif_from_s3(bucket_name, nir_key)
