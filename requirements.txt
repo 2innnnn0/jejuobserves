@@ -3,3 +3,4 @@ streamlit-cropper
 pandas
 rasterio
 matplotlib
+boto3
