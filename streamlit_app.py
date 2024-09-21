@@ -16,13 +16,13 @@ from rasterio.io import MemoryFile
 # OpenAI API 키 설정 (환경 변수로 설정하거나 여기에 직접 추가)
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 
-st.write(os.getcwd())
+# st.write(os.getcwd()) # /mount/src/jejuobserves
 
 # Streamlit secrets를 이용하여 자격 증명 설정
 AWS_ACCESS_KEY_ID = st.secrets["AWS_ACCESS_KEY_ID"]
 AWS_SECRET_ACCESS_KEY = st.secrets["AWS_SECRET_ACCESS_KEY"]
 
-st.write(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, OPENAI_API_KEY)
+# st.write(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, OPENAI_API_KEY)
 
 # boto3 클라이언트를 자격 증명과 함께 생성
 s3 = boto3.client(
@@ -41,7 +41,7 @@ def read_tif_from_s3(bucket_name, key):
             return dataset.read(1), dataset.transform
 
 # S3 버킷 정보 (S3)
-bucket_name = 'datapopcorn'
+bucket_name = 's3://datapopcorn'
 nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif'  # S3에 있는 NIR 파일 경로
 red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'  # S3에 있는 RED 파일 경로
 
