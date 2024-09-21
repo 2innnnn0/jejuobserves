@@ -54,7 +54,6 @@ red_band, red_transform = read_tif_from_s3(bucket_name, red_key)
 # red_file = "data/PR.tif"
 # thumbnail_path = "data/adjusted_image.jpg"
 
-
 # # OpenAI API 호출 함수
 # def analyze_ndvi(ndvi_result):
 #     with st.spinner("AI가 농지를 검토하고 있어요! 🥕"):
@@ -90,20 +89,20 @@ red_band, red_transform = read_tif_from_s3(bucket_name, red_key)
 #     st.success("AI 인식이 끝났습니다")
 #     return result
 
-# # DecompressionBombWarning을 방지하기 위해 사이즈 제한을 제거
-# Image.MAX_IMAGE_PIXELS = None
-# ImageFile.LOAD_TRUNCATED_IMAGES = True
+# DecompressionBombWarning을 방지하기 위해 사이즈 제한을 제거
+Image.MAX_IMAGE_PIXELS = None
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-# # Streamlit Wide Mode 설정
-# st.set_page_config(layout="wide")
+# Streamlit Wide Mode 설정
+st.set_page_config(layout="wide")
 
-# # Streamlit Title
-# st.title("Jeju Satellite Data NDVI Calculation")
+# Streamlit Title
+st.title("Jeju Satellite Data NDVI Calculation")
 
-# # 파일 읽기 함수 정의
-# def load_tiff(file_path):
-#     with rasterio.open(file_path) as src:
-#         return src.read(1), src.transform, src.width, src.height
+# 파일 읽기 함수 정의
+def load_tiff(file_path):
+    with rasterio.open(file_path) as src:
+        return src.read(1), src.transform, src.width, src.height
 
 # # NDVI 계산 함수 정의
 def calculate_ndvi(nir_band, red_band):
@@ -120,65 +119,65 @@ st.write(calculate_ndvi(nir_band, red_band))
 # nir_band, nir_transform, nir_width, nir_height = load_tiff(nir_file)  # NIR 밴드
 # red_band, red_transform, red_width, red_height = load_tiff(red_file)  # RED 밴드
 
-# # 타일 수를 슬라이더로 선택
-# st.subheader("Select the number of tiles")
-# num_tiles = st.slider("Number of tiles per row and column", min_value=2, max_value=16, value=8)
+# 타일 수를 슬라이더로 선택
+st.subheader("Select the number of tiles")
+num_tiles = st.slider("Number of tiles per row and column", min_value=2, max_value=16, value=8)
 
-# # 이미지 크기 및 타일 크기 계산
-# tile_width = nir_width // num_tiles
-# tile_height = nir_height // num_tiles
+# 이미지 크기 및 타일 크기 계산
+tile_width = nir_width // num_tiles
+tile_height = nir_height // num_tiles
 
-# # 타일 선택 위젯
-# tile_options = [(row, col) for row in range(num_tiles) for col in range(num_tiles)]
-# selected_tile = st.selectbox("Select a Tile", tile_options)
+# 타일 선택 위젯
+tile_options = [(row, col) for row in range(num_tiles) for col in range(num_tiles)]
+selected_tile = st.selectbox("Select a Tile", tile_options)
 
-# # 선택된 타일의 행, 열 번호 추출
-# tile_row, tile_col = selected_tile
+# 선택된 타일의 행, 열 번호 추출
+tile_row, tile_col = selected_tile
 
-# # 좌우 배치 - 썸네일과 NDVI 결과
-# col1, col2 = st.columns(2)
+# 좌우 배치 - 썸네일과 NDVI 결과
+col1, col2 = st.columns(2)
 
-# # 왼쪽: 썸네일 이미지 표시 (타일에 맞게 부분 표시)
-# with col1:
-#     st.subheader("Thumbnail (BR.jpg) for Selected Tile")
+# 왼쪽: 썸네일 이미지 표시 (타일에 맞게 부분 표시)
+with col1:
+    st.subheader("Thumbnail (BR.jpg) for Selected Tile")
     
-#     # BR.jpg 파일 열기
-#     img = Image.open(thumbnail_path)
+    # BR.jpg 파일 열기
+    img = Image.open(thumbnail_path)
     
-#     # 이미지 크기 계산
-#     img_width, img_height = img.size
-#     tile_width_thumb = img_width // num_tiles
-#     tile_height_thumb = img_height // num_tiles
+    # 이미지 크기 계산
+    img_width, img_height = img.size
+    tile_width_thumb = img_width // num_tiles
+    tile_height_thumb = img_height // num_tiles
     
-#     # 선택된 타일에 맞는 부분 자르기
-#     left = tile_col * tile_width_thumb
-#     upper = tile_row * tile_height_thumb
-#     right = left + tile_width_thumb
-#     lower = upper + tile_height_thumb
-#     cropped_img = img.crop((left, upper, right, lower))
+    # 선택된 타일에 맞는 부분 자르기
+    left = tile_col * tile_width_thumb
+    upper = tile_row * tile_height_thumb
+    right = left + tile_width_thumb
+    lower = upper + tile_height_thumb
+    cropped_img = img.crop((left, upper, right, lower))
     
-#     # 썸네일 타일 이미지 표시
-#     st.image(cropped_img, caption=f"BR.jpg Tile ({tile_row}, {tile_col})", use_column_width=True)
+    # 썸네일 타일 이미지 표시
+    st.image(cropped_img, caption=f"BR.jpg Tile ({tile_row}, {tile_col})", use_column_width=True)
 
-# # 오른쪽: NDVI 결과 시각화 (X,Y축과 범례 제거)
-# with col2:
-#     st.subheader(f"NDVI Result for Tile ({tile_row}, {tile_col})")
-#     fig, ax = plt.subplots()
+# 오른쪽: NDVI 결과 시각화 (X,Y축과 범례 제거)
+with col2:
+    st.subheader(f"NDVI Result for Tile ({tile_row}, {tile_col})")
+    fig, ax = plt.subplots()
 
-#     # 선택된 타일에 해당하는 NDVI 부분 가져오기
-#     ndvi_tile = ndvi_result[
-#         tile_row * tile_height:(tile_row + 1) * tile_height,
-#         tile_col * tile_width:(tile_col + 1) * tile_width
-#     ]
+    # 선택된 타일에 해당하는 NDVI 부분 가져오기
+    ndvi_tile = ndvi_result[
+        tile_row * tile_height:(tile_row + 1) * tile_height,
+        tile_col * tile_width:(tile_col + 1) * tile_width
+    ]
 
-#     # NDVI 결과 시각화 (모든 테마 제거)
-#     cax = ax.imshow(ndvi_tile, cmap='RdYlGn')
+    # NDVI 결과 시각화 (모든 테마 제거)
+    cax = ax.imshow(ndvi_tile, cmap='RdYlGn')
     
-#     # X축, Y축, 범례, 틱 제거
-#     ax.axis('off')
+    # X축, Y축, 범례, 틱 제거
+    ax.axis('off')
     
-#     # 플롯 그리기
-#     st.pyplot(fig)
+    # 플롯 그리기
+    st.pyplot(fig)
 
 # # AI 분석하기
 # if st.button("AI 분석하기"):
