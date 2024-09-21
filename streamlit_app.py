@@ -13,12 +13,22 @@ import json
 import boto3
 from rasterio.io import MemoryFile
 
+# Streamlit secrets를 이용하여 자격 증명 설정
+aws_access_key = st.secrets["AWS_ACCESS_KEY_ID"]
+aws_secret_key = st.secrets["AWS_SECRET_ACCESS_KEY"]
 
-# S3에서 파일을 읽는 함수
+# boto3 클라이언트를 자격 증명과 함께 생성
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=aws_access_key,
+    aws_secret_access_key=aws_secret_key
+)
+
+# S3에서 파일 읽는 함수
 def read_tif_from_s3(bucket_name, key):
-    s3 = boto3.client('s3')
     response = s3.get_object(Bucket=bucket_name, Key=key)
     file_data = response['Body'].read()
+    return file_data
 
     with MemoryFile(file_data) as memfile:
         with memfile.open() as dataset:
