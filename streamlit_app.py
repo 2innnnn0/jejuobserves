@@ -60,12 +60,12 @@ def read_tif_from_s3(bucket_name, key):
 
 # S3 버킷 정보 (S3)
 bucket_name = 'datapopcorn'
-nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로 
+# nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로 
 # nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif' 
-# nir_key = 'tif/demo_PN.tif' 
-red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로 
+nir_key = 'tif/demo_PN.tif' 
+# red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로 
 # red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'
-# red_key = 'tif/demo_PR.tif'
+red_key = 'tif/demo_PR.tif'
 thumbnail_key = 'tif/demo_adjusted_image.jpg'
 
 # NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
@@ -206,10 +206,10 @@ thumbnail_draw.line([(0, height-1), (width, height-1)], fill="red", width=20)  #
 
 # Streamlit에서 이미지 프리뷰로 보여주기
 st.subheader("Thumbnail with Grid Preview")
-st.image(thumbnail_img, caption=f"Thumbnail with {num_tiles}x{num_tiles} grid", use_column_width=True)
+st.image(thumbnail_img, use_column_width=True) # caption=f"Thumbnail with {num_tiles}x{num_tiles} grid",
 
-# 타일 선택 위젯
-tile_options = [(row, col) for row in range(num_tiles) for col in range(num_tiles)]
+# 타일 선택 위젯 (내림차순)
+tile_options = [(row, col) for row in reversed(range(num_tiles)) for col in reversed(range(num_tiles))]
 selected_tile = st.selectbox("Select a Tile", tile_options)
 
 # 선택된 타일의 행, 열 번호 추출
