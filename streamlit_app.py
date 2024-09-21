@@ -16,6 +16,7 @@ from rasterio.io import MemoryFile
 # OpenAI API 키 설정 (환경 변수로 설정하거나 여기에 직접 추가)
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 
+st.write(os.getcwd())
 
 # Streamlit secrets를 이용하여 자격 증명 설정
 AWS_ACCESS_KEY_ID = st.secrets["AWS_ACCESS_KEY_ID"]
