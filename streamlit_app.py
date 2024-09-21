@@ -13,15 +13,18 @@ import json
 import boto3
 from rasterio.io import MemoryFile
 
+# OpenAI API 키 설정 (환경 변수로 설정하거나 여기에 직접 추가)
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+
 # Streamlit secrets를 이용하여 자격 증명 설정
-aws_access_key = st.secrets["AWS_ACCESS_KEY_ID"]
-aws_secret_key = st.secrets["AWS_SECRET_ACCESS_KEY"]
+AWS_ACCESS_KEY_ID = st.secrets["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = st.secrets["AWS_SECRET_ACCESS_KEY"]
 
 # boto3 클라이언트를 자격 증명과 함께 생성
 s3 = boto3.client(
     's3',
-    aws_access_key_id=aws_access_key,
-    aws_secret_access_key=aws_secret_key
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
 )
 
 # S3에서 파일 읽는 함수
@@ -49,8 +52,7 @@ nir_band, nir_transform = read_tif_from_s3(bucket_name, nir_key)
 red_band, red_transform = read_tif_from_s3(bucket_name, red_key)
 
 
-# OpenAI API 키 설정 (환경 변수로 설정하거나 여기에 직접 추가)
-OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+
 
 # OpenAI API 호출 함수
 def analyze_ndvi(ndvi_result):
