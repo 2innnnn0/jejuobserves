@@ -3,7 +3,13 @@ import numpy as np
 import rasterio
 from rasterio.plot import show
 import matplotlib.pyplot as plt
+from PIL import Image, ImageEnhance
+from PIL import ImageFile
 import os
+
+# DecompressionBombWarning을 방지하기 위해 사이즈 제한을 제거
+Image.MAX_IMAGE_PIXELS = None
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # Streamlit Wide Mode 설정
 st.set_page_config(layout="wide")
@@ -13,13 +19,25 @@ st.title("Jeju Satellite Data NDVI Calculation with Tiles")
 
 # 제주 위성 데이터 타일 경로 및 썸네일 경로
 tiles_folder = "data/tiles/"
-thumbnail_path = "data/br.jpg"
+thumbnail_path = "data/adjusted_image.jpg"
 
 # 타일 목록 가져오기
 tile_files = [f for f in os.listdir(tiles_folder) if f.endswith(".tif") and "PN_tile" in f]
 
+# 타일 파일 이름에서 숫자를 추출하여 오름차순 정렬
+tile_files.sort(key=lambda x: (int(x.split('_')[-2]), int(x.split('_')[-1].replace('.tif', ''))))
+
 # 타일 선택 위젯
 selected_tile = st.selectbox("Select a Tile", tile_files)
+
+
+# 선택된 타일의 행, 열 번호 추출
+try:
+    # 파일 이름에서 확장자를 제거하고, 행과 열 번호 추출
+    tile_row, tile_col = map(int, selected_tile.replace('.tif', '').split('_')[-2:])
+except ValueError as e:
+    st.error(f"Error parsing tile file: {e}")
+    st.stop()
 
 # 파일 읽기 함수 정의
 def load_tiff(file_path):
@@ -47,10 +65,27 @@ ndvi = calculate_ndvi(nir_band, red_band)
 # 좌우 배치 - 썸네일과 NDVI 결과
 col1, col2 = st.columns(2)
 
-# 왼쪽: 썸네일 이미지 표시
+# 왼쪽: 썸네일 이미지 표시 (타일에 맞게 부분 표시)
 with col1:
-    st.subheader("Thumbnail (BR.jpg)")
-    st.image(thumbnail_path, caption="Jeju Satellite Thumbnail", use_column_width=True)
+    st.subheader("Thumbnail (BR.jpg) for Selected Tile")
+    
+    # BR.jpg 파일 열기
+    img = Image.open(thumbnail_path)
+    
+    # 이미지 크기 및 타일 크기 계산 (8x8 타일 기준)
+    img_width, img_height = img.size
+    tile_width = img_width // 8
+    tile_height = img_height // 8
+    
+    # 선택된 타일에 맞는 부분 자르기
+    left = tile_col * tile_width
+    upper = tile_row * tile_height
+    right = left + tile_width
+    lower = upper + tile_height
+    cropped_img = img.crop((left, upper, right, lower))
+    
+    # 썸네일 타일 이미지 표시
+    st.image(cropped_img, caption=f"BR.jpg Tile ({tile_row}, {tile_col})", use_column_width=True)
 
 # 오른쪽: NDVI 결과 시각화 (X,Y축과 범례 제거)
 with col2:
