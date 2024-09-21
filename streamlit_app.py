@@ -23,31 +23,30 @@ AWS_SECRET_ACCESS_KEY = st.secrets["AWS_SECRET_ACCESS_KEY"]
 
 st.write(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, OPENAI_API_KEY)
 
-# # boto3 클라이언트를 자격 증명과 함께 생성
-# s3 = boto3.client(
-#     's3',
-#     aws_access_key_id=AWS_ACCESS_KEY_ID,
-#     aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-# )
+# boto3 클라이언트를 자격 증명과 함께 생성
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+)
 
-# # S3에서 파일 읽는 함수
-# def read_tif_from_s3(bucket_name, key):
-#     response = s3.get_object(Bucket=bucket_name, Key=key)
-#     file_data = response['Body'].read()
+# S3에서 파일 읽는 함수
+def read_tif_from_s3(bucket_name, key):
+    response = s3.get_object(Bucket=bucket_name, Key=key)
+    file_data = response['Body'].read()
 
-#     with MemoryFile(file_data) as memfile:
-#         with memfile.open() as dataset:
-#             return dataset.read(1), dataset.transform
+    with MemoryFile(file_data) as memfile:
+        with memfile.open() as dataset:
+            return dataset.read(1), dataset.transform
 
-# # S3 버킷 정보 (S3)
-# # bucket_name = 'datapopcorn'
-# nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif'  # S3에 있는 NIR 파일 경로
-# red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'  # S3에 있는 RED 파일 경로
+# S3 버킷 정보 (S3)
+# bucket_name = 'datapopcorn'
+nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif'  # S3에 있는 NIR 파일 경로
+red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'  # S3에 있는 RED 파일 경로
 
-# # NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
-# nir_band, nir_transform = read_tif_from_s3(bucket_name, nir_key)
-# red_band, red_transform = read_tif_from_s3(bucket_name, red_key)
-
+# NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
+nir_band, nir_transform = read_tif_from_s3(bucket_name, nir_key)
+red_band, red_transform = read_tif_from_s3(bucket_name, red_key)
 
 # # 전체 NIR 및 RED 파일 경로 (로컬)
 # nir_file = "data/PN.tif"
@@ -106,11 +105,14 @@ st.write(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, OPENAI_API_KEY)
 #         return src.read(1), src.transform, src.width, src.height
 
 # # NDVI 계산 함수 정의
-# def calculate_ndvi(nir_band, red_band):
-#     nir = nir_band.astype(float)
-#     red = red_band.astype(float)
-#     ndvi = (nir - red) / (nir + red)
-#     return np.clip(ndvi, -1, 1)  # NDVI 범위를 [-1, 1]로 클립
+def calculate_ndvi(nir_band, red_band):
+    nir = nir_band.astype(float)
+    red = red_band.astype(float)
+    ndvi = (nir - red) / (nir + red)
+    return np.clip(ndvi, -1, 1)  # NDVI 범위를 [-1, 1]로 클립
+
+
+st.write(calculate_ndvi(nir_band, red_band))
 
 # # 전체 NIR 및 RED 밴드 로드 (로컬)
 # st.subheader("Loading Full NIR and RED Bands")
