@@ -31,14 +31,14 @@ s3 = boto3.client(
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY
 )
 
-# S3에서 파일 읽는 함수
+# S3에서 파일을 읽는 함수
 def read_tif_from_s3(bucket_name, key):
     response = s3.get_object(Bucket=bucket_name, Key=key)
     file_data = response['Body'].read()
 
     with MemoryFile(file_data) as memfile:
         with memfile.open() as dataset:
-            return dataset.read(1), dataset.transform
+            return dataset.read(1), dataset.transform, dataset.width, dataset.height
 
 # S3 버킷 정보 (S3)
 bucket_name = 'datapopcorn'
@@ -46,9 +46,8 @@ nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로
 red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로
 
 # NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
-nir_band, nir_transform = read_tif_from_s3(bucket_name, nir_key)
-red_band, red_transform = read_tif_from_s3(bucket_name, red_key)
-
+nir_band, nir_transform, nir_width, nir_height = read_tif_from_s3(bucket_name, nir_key)
+red_band, red_transform, red_width, red_height = read_tif_from_s3(bucket_name, red_key)
 # # 전체 NIR 및 RED 파일 경로 (로컬)
 # nir_file = "data/PN.tif"
 # red_file = "data/PR.tif"
@@ -112,7 +111,7 @@ def calculate_ndvi(nir_band, red_band):
     return np.clip(ndvi, -1, 1)  # NDVI 범위를 [-1, 1]로 클립
 
 
-st.write(calculate_ndvi(nir_band, red_band))
+# st.write(calculate_ndvi(nir_band, red_band))
 
 # # 전체 NIR 및 RED 밴드 로드 (로컬)
 # st.subheader("Loading Full NIR and RED Bands")
