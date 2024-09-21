@@ -3,7 +3,7 @@ import numpy as np
 import rasterio
 from rasterio.plot import show
 import matplotlib.pyplot as plt
-from PIL import Image, ImageEnhance, ImageFile
+from PIL import Image, ImageEnhance, ImageFile, ImageDraw, ImageFont
 import os
 import time
 import requests
@@ -42,8 +42,8 @@ def read_tif_from_s3(bucket_name, key):
 
 # S3 버킷 정보 (S3)
 bucket_name = 'datapopcorn'
-nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로
-red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로
+nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로  'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif' 
+red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로  'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'
 
 # NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
 nir_band, nir_transform, nir_width, nir_height = read_tif_from_s3(bucket_name, nir_key)
@@ -103,13 +103,19 @@ def load_tiff(file_path):
     with rasterio.open(file_path) as src:
         return src.read(1), src.transform, src.width, src.height
 
-# # NDVI 계산 함수 정의
+# NDVI 계산 함수 정의
 def calculate_ndvi(nir_band, red_band):
     nir = nir_band.astype(float)
     red = red_band.astype(float)
     ndvi = (nir - red) / (nir + red)
     return np.clip(ndvi, -1, 1)  # NDVI 범위를 [-1, 1]로 클립
 
+# NDVI 계산
+ndvi_result = calculate_ndvi(nir_band, red_band)
+
+# Streamlit에서 NDVI 결과 시각화
+# st.title("S3에서 불러온 NDVI 결과")
+# st.image(ndvi_result, caption="NDVI 이미지", use_column_width=True)
 
 # st.write(calculate_ndvi(nir_band, red_band))
 
@@ -122,9 +128,56 @@ def calculate_ndvi(nir_band, red_band):
 st.subheader("Select the number of tiles")
 num_tiles = st.slider("Number of tiles per row and column", min_value=2, max_value=16, value=8)
 
+# 썸네일 이미지 로드
+thumbnail_img = Image.open(thumbnail_path)
+img_width, img_height = thumbnail_img.size
+
 # 이미지 크기 및 타일 크기 계산
 tile_width = nir_width // num_tiles
 tile_height = nir_height // num_tiles
+
+# 이미지에 그리기 위한 ImageDraw 객체 생성
+thumbnail_draw = ImageDraw.Draw(thumbnail_img)
+
+# 폰트 설정 (기본 폰트)
+# try:
+#     font = ImageFont.truetype("arial.ttf", 14)  # 시스템에 폰트가 있는 경우
+# except IOError:
+#     font = ImageFont.load_default()  # 폰트가 없는 경우 기본 폰트 사용
+
+# 격자와 타일 인덱스를 이미지에 그리기
+for row in range(num_tiles):
+    for col in range(num_tiles):
+        # 타일의 좌상단과 우하단 좌표 계산
+        left = col * tile_width
+        upper = row * tile_height
+        right = left + tile_width
+        lower = upper + tile_height
+        
+        # 격자 그리기
+        thumbnail_draw.rectangle([left, upper, right, lower], outline="red", width=2)
+        
+        # 타일 중앙에 텍스트 표시
+        center_x = left + tile_width // 2
+        center_y = upper + tile_height // 2
+        text = f"({row},{col})"
+        # text_size = thumbnail_draw.textsize(text)
+        # thumbnail_draw.text((center_x - text_size[0] // 2, center_y - text_size[1] // 2), text, fill="red")
+
+        # 텍스트 크기 계산 (getbbox 사용)
+        bbox = thumbnail_draw.textbbox((0, 0), text)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        
+        # 텍스트 그리기 (중앙에 맞추기)
+        thumbnail_draw.text(
+            (center_x - text_width // 2, center_y - text_height // 2),
+            text, fill="red"
+        )
+
+# Streamlit에서 이미지 프리뷰로 보여주기
+st.subheader("Thumbnail with Grid Preview")
+st.image(thumbnail_img, caption=f"Thumbnail with {num_tiles}x{num_tiles} grid", use_column_width=True)
 
 # 타일 선택 위젯
 tile_options = [(row, col) for row in range(num_tiles) for col in range(num_tiles)]
