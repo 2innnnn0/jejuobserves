@@ -58,14 +58,24 @@ def read_tif_from_s3(bucket_name, key):
         with memfile.open() as dataset:
             return dataset.read(1), dataset.transform, dataset.width, dataset.height
 
+
+# num_tiles, tile_row, tile_col 설정
+num_tiles = 16  # 타일의 수 (예: 8x8 그리드)
+tile_row = 7  # 행 번호 (0부터 시작)
+tile_col = 7  # 열 번호 (0부터 시작)
+
+# NIR 및 RED 파일 경로 동적 생성
+# nir_key = f'tif/demo_PN_{num_tiles}_tile_{tile_row}_{tile_col}.tif'
+# red_key = f'tif/demo_PR_{num_tiles}_tile_{tile_row}_{tile_col}.tif'
+
 # S3 버킷 정보 (S3)
 bucket_name = 'datapopcorn'
-# nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로 
+nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로 
 # nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif' 
-nir_key = 'tif/demo_PN.tif' 
-# red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로 
+# nir_key = 'tif/demo_PN.tif' 
+red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로 
 # red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'
-red_key = 'tif/demo_PR.tif'
+# red_key = 'tif/demo_PR.tif'
 thumbnail_key = 'tif/demo_adjusted_image.jpg'
 
 # NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
@@ -76,7 +86,7 @@ red_band, red_transform, red_width, red_height = read_tif_from_s3(bucket_name, r
 # red_file = "data/PR.tif"
 # thumbnail_path = "data/demo_adjusted_image.jpg"
 
-# # OpenAI API 호출 함수
+# OpenAI API 호출 함수
 # def analyze_ndvi(ndvi_result):
 #     with st.spinner("AI가 농지를 검토하고 있어요! 🥕"):
 #         time.sleep(2)
@@ -148,13 +158,17 @@ ndvi_result = calculate_ndvi(nir_band, red_band)
 # red_band, red_transform, red_width, red_height = load_tiff(red_file)  # RED 밴드
 
 # 타일 수를 슬라이더로 선택
-st.subheader("Select the number of tiles")
-num_tiles = st.slider("Number of tiles per row and column", min_value=2, max_value=16, value=8)
+# st.subheader("Select the number of tiles")
+num_tiles = 16 # st.slider("Number of tiles per row and column", min_value=2, max_value=16, value=8)
 
 # 썸네일 이미지 로드
 # thumbnail_img = Image.open(thumbnail_path) # 로컬
 thumbnail_img = show_image_from_s3(bucket_name, thumbnail_key, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) # S3
 img_width, img_height = thumbnail_img.size
+
+# Streamlit에서 이미지 프리뷰로 보여주기
+st.subheader("Thumbnail with Grid Preview")
+st.image(thumbnail_img, use_column_width=True) # caption=f"Thumbnail with {num_tiles}x{num_tiles} grid",
 
 # 이미지 크기 및 타일 크기 계산
 tile_width = nir_width // num_tiles
@@ -163,16 +177,9 @@ tile_height = nir_height // num_tiles
 # 이미지에 그리기 위한 ImageDraw 객체 생성
 thumbnail_draw = ImageDraw.Draw(thumbnail_img)
 
-# 이미지 크기 구하기
-width, height = thumbnail_img.size
-
-# 격자 셀 크기 계산
-tile_width = width // num_tiles
-tile_height = height // num_tiles
-
 # 폰트 설정 (폰트 크기 200으로 설정)
 try:
-    font = ImageFont.truetype("Pretendard.ttf", 600)  # 폰트 크기를 더 키움
+    font = ImageFont.truetype("Pretendard.ttf", 500)  # 폰트 크기를 더 키움
 except IOError:
     font = ImageFont.load_default()  # 폰트 로드 실패 시 기본 폰트 사용
 
@@ -197,16 +204,12 @@ for i in range(num_tiles):
         thumbnail_img.paste(text_img, (j * tile_width, i * tile_height), text_img)
         
         # 격자 선 그리기 (가로, 세로)
-        thumbnail_draw.line([(j * tile_width, 0), (j * tile_width, height)], fill="red", width=20)  # 세로선
-        thumbnail_draw.line([(0, i * tile_height), (width, i * tile_height)], fill="red", width=20)  # 가로선
+        thumbnail_draw.line([(j * tile_width, 0), (j * tile_width, height)], fill="red", width=15)  # 세로선
+        thumbnail_draw.line([(0, i * tile_height), (width, i * tile_height)], fill="red", width=15)  # 가로선
 
 # 마지막 오른쪽 및 아래쪽 선 그리기
-thumbnail_draw.line([(width-1, 0), (width-1, height)], fill="red", width=20)  # 오른쪽 경계선
-thumbnail_draw.line([(0, height-1), (width, height-1)], fill="red", width=20)  # 아래쪽 경계선
-
-# Streamlit에서 이미지 프리뷰로 보여주기
-st.subheader("Thumbnail with Grid Preview")
-st.image(thumbnail_img, use_column_width=True) # caption=f"Thumbnail with {num_tiles}x{num_tiles} grid",
+thumbnail_draw.line([(width-1, 0), (width-1, height)], fill="red", width=15)  # 오른쪽 경계선
+thumbnail_draw.line([(0, height-1), (width, height-1)], fill="red", width=15)  # 아래쪽 경계선
 
 # 타일 선택 위젯 (내림차순)
 tile_options = [(row, col) for row in reversed(range(num_tiles)) for col in reversed(range(num_tiles))]
@@ -220,7 +223,7 @@ col1, col2 = st.columns(2)
 
 # 왼쪽: 썸네일 이미지 표시 (타일에 맞게 부분 표시)
 with col1:
-    st.subheader("Thumbnail (BR.jpg) for Selected Tile")
+    st.subheader("Thumbnail for Selected Tile")
     
     # BR.jpg 파일 열기
     # img = Image.open(thumbnail_path) # 로컬
@@ -239,7 +242,7 @@ with col1:
     cropped_img = img.crop((left, upper, right, lower))
     
     # 썸네일 타일 이미지 표시
-    st.image(cropped_img, caption=f"BR.jpg Tile ({tile_row}, {tile_col})", use_column_width=True)
+    st.image(cropped_img, use_column_width=True)
 
 # 오른쪽: NDVI 결과 시각화 (X,Y축과 범례 제거)
 with col2:
@@ -261,7 +264,7 @@ with col2:
     # 플롯 그리기
     st.pyplot(fig)
 
-# # AI 분석하기
+# AI 분석하기
 # if st.button("AI 분석하기"):
 #     # AI 분석 호출
 #     ai_result = analyze_ndvi(ndvi_result)
