@@ -42,7 +42,7 @@ AWS_ACCESS_KEY_ID = st.secrets["AWS_ACCESS_KEY_ID"]
 AWS_SECRET_ACCESS_KEY = st.secrets["AWS_SECRET_ACCESS_KEY"]
 
 bucket_name = 'datapopcorn'
-thumbnail_key = 'tif/demo_adjusted_image.jpg'
+thumbnail_key = 'tif/demo_adjusted_image.jpg' # 'tif/demo_compressed_image.jpeg'
 
 # boto3 클라이언트를 자격 증명과 함께 생성
 s3 = boto3.client(
@@ -64,7 +64,7 @@ def read_tif_from_s3(bucket_name, key):
 # # 전체 NIR 및 RED 파일 경로 (로컬)
 # nir_file = "data/PN.tif"
 # red_file = "data/PR.tif"
-thumbnail_path = "data/br.jpg" # "data/demo_adjusted_image.jpg"
+thumbnail_path = 'data/demo_compressed_image.jpeg' # "data/br.jpg" # "data/demo_adjusted_image.jpg"
 
 # DecompressionBombWarning을 방지하기 위해 사이즈 제한을 제거
 Image.MAX_IMAGE_PIXELS = None
@@ -124,7 +124,7 @@ tile_height = height // num_tiles
 
 # 폰트 설정 (폰트 크기 200으로 설정)
 try:
-    font = ImageFont.truetype("Pretendard.ttf", 500)  # 폰트 크기를 더 키움
+    font = ImageFont.truetype("Pretendard.ttf", 200)  # 폰트 크기를 더 키움
 except IOError:
     font = ImageFont.load_default()  # 폰트 로드 실패 시 기본 폰트 사용
 
