@@ -124,7 +124,7 @@ tile_height = height // num_tiles
 
 # 폰트 설정 (폰트 크기 200으로 설정)
 try:
-    font = ImageFont.truetype("Pretendard.ttf", 500)  # 폰트 크기를 더 키움
+    font = ImageFont.truetype("Pretendard.ttf", 100)  # 폰트 크기를 더 키움
 except IOError:
     font = ImageFont.load_default()  # 폰트 로드 실패 시 기본 폰트 사용
 
