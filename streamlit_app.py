@@ -64,7 +64,7 @@ def read_tif_from_s3(bucket_name, key):
 # # 전체 NIR 및 RED 파일 경로 (로컬)
 # nir_file = "data/PN.tif"
 # red_file = "data/PR.tif"
-thumbnail_path = "data/demo_adjusted_image.jpg"
+thumbnail_path = "data/br.jpg" # "data/demo_adjusted_image.jpg"
 
 # DecompressionBombWarning을 방지하기 위해 사이즈 제한을 제거
 Image.MAX_IMAGE_PIXELS = None
