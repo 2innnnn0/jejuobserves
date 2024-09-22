@@ -85,7 +85,11 @@ def load_tiff(file_path):
 def calculate_ndvi(nir_band, red_band):
     nir = nir_band.astype(float)
     red = red_band.astype(float)
-    ndvi = (nir - red) / (nir + red)
+    # Division by zero와 NaN 값을 처리
+    with np.errstate(divide='ignore', invalid='ignore'):
+        ndvi = (nir - red) / (nir + red)
+        # NaN 또는 무한대 값을 0으로 대체
+        ndvi = np.nan_to_num(ndvi, nan=0.0, posinf=0.0, neginf=0.0)
     return np.clip(ndvi, -1, 1)  # NDVI 범위를 [-1, 1]로 클립
 
 # Streamlit에서 NDVI 결과 시각화
