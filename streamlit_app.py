@@ -40,7 +40,8 @@ def show_image_from_s3(bucket_name, key, aws_access_key_id, aws_secret_access_ke
 AWS_ACCESS_KEY_ID = st.secrets["AWS_ACCESS_KEY_ID"]
 AWS_SECRET_ACCESS_KEY = st.secrets["AWS_SECRET_ACCESS_KEY"]
 
-# st.write(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, OPENAI_API_KEY)
+bucket_name = 'datapopcorn'
+thumbnail_key = 'tif/demo_adjusted_image.jpg'
 
 # boto3 클라이언트를 자격 증명과 함께 생성
 s3 = boto3.client(
@@ -59,28 +60,6 @@ def read_tif_from_s3(bucket_name, key):
             return dataset.read(1), dataset.transform, dataset.width, dataset.height
 
 
-# num_tiles, tile_row, tile_col 설정
-num_tiles = 16  # 타일의 수 (예: 8x8 그리드)
-tile_row = 7  # 행 번호 (0부터 시작)
-tile_col = 7  # 열 번호 (0부터 시작)
-
-# NIR 및 RED 파일 경로 동적 생성
-# nir_key = f'tif/demo_PN_{num_tiles}_tile_{tile_row}_{tile_col}.tif'
-# red_key = f'tif/demo_PR_{num_tiles}_tile_{tile_row}_{tile_col}.tif'
-
-# S3 버킷 정보 (S3)
-bucket_name = 'datapopcorn'
-nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로 
-# nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif' 
-# nir_key = 'tif/demo_PN.tif' 
-red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로 
-# red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'
-# red_key = 'tif/demo_PR.tif'
-thumbnail_key = 'tif/demo_adjusted_image.jpg'
-
-# NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
-nir_band, nir_transform, nir_width, nir_height = read_tif_from_s3(bucket_name, nir_key)
-red_band, red_transform, red_width, red_height = read_tif_from_s3(bucket_name, red_key)
 # # 전체 NIR 및 RED 파일 경로 (로컬)
 # nir_file = "data/PN.tif"
 # red_file = "data/PR.tif"
@@ -143,9 +122,6 @@ def calculate_ndvi(nir_band, red_band):
     ndvi = (nir - red) / (nir + red)
     return np.clip(ndvi, -1, 1)  # NDVI 범위를 [-1, 1]로 클립
 
-# NDVI 계산
-ndvi_result = calculate_ndvi(nir_band, red_band)
-
 # Streamlit에서 NDVI 결과 시각화
 # st.title("S3에서 불러온 NDVI 결과")
 # st.image(ndvi_result, caption="NDVI 이미지", use_column_width=True)
@@ -166,16 +142,15 @@ num_tiles = 16 # st.slider("Number of tiles per row and column", min_value=2, ma
 thumbnail_img = show_image_from_s3(bucket_name, thumbnail_key, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) # S3
 img_width, img_height = thumbnail_img.size
 
-# Streamlit에서 이미지 프리뷰로 보여주기
-st.subheader("Thumbnail with Grid Preview")
-st.image(thumbnail_img, use_column_width=True) # caption=f"Thumbnail with {num_tiles}x{num_tiles} grid",
-
-# 이미지 크기 및 타일 크기 계산
-tile_width = nir_width // num_tiles
-tile_height = nir_height // num_tiles
-
 # 이미지에 그리기 위한 ImageDraw 객체 생성
 thumbnail_draw = ImageDraw.Draw(thumbnail_img)
+
+# 이미지 크기 구하기
+width, height = thumbnail_img.size
+
+# 격자 셀 크기 계산
+tile_width = width // num_tiles
+tile_height = height // num_tiles
 
 # 폰트 설정 (폰트 크기 200으로 설정)
 try:
@@ -215,6 +190,10 @@ thumbnail_draw.line([(0, height-1), (width, height-1)], fill="red", width=15)  #
 tile_options = [(row, col) for row in reversed(range(num_tiles)) for col in reversed(range(num_tiles))]
 selected_tile = st.selectbox("Select a Tile", tile_options)
 
+# Streamlit에서 이미지 프리뷰로 보여주기
+st.subheader("Thumbnail with Grid Preview")
+st.image(thumbnail_img, use_column_width=True) # caption=f"Thumbnail with {num_tiles}x{num_tiles} grid",
+
 # 선택된 타일의 행, 열 번호 추출
 tile_row, tile_col = selected_tile
 
@@ -249,11 +228,42 @@ with col2:
     st.subheader(f"NDVI Result for Tile ({tile_row}, {tile_col})")
     fig, ax = plt.subplots()
 
+    # # 이미지 크기 및 타일 크기 계산
+    # tile_width = nir_width // num_tiles
+    # tile_height = nir_height // num_tiles
+
+
+    # num_tiles, tile_row, tile_col 설정
+    num_tiles = 16  # 타일의 수 (예: 8x8 그리드)
+    # tile_row = 7  # 행 번호 (0부터 시작)
+    # tile_col = 7  # 열 번호 (0부터 시작)
+
+    # NIR 및 RED 파일 경로 동적 생성
+    nir_key = f'tif/demo_tiles/demo_PN_{num_tiles}_tile_{tile_row}_{tile_col}.tif'
+    red_key = f'tif/demo_tiles/demo_PR_{num_tiles}_tile_{tile_row}_{tile_col}.tif'
+
+    # S3 버킷 정보 (S3)
+    # nir_key = 'tif/PN_tile_7_7.tif'  # S3에 있는 NIR 파일 경로 
+    # nir_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PN.tif' 
+    # nir_key = 'tif/demo_PN.tif' 
+    # red_key = 'tif/PR_tile_7_7.tif'  # S3에 있는 RED 파일 경로 
+    # red_key = 'tif/K3A_20230516044713_44934_00084310_L1R_PR.tif'
+    # red_key = 'tif/demo_PR.tif'
+
+    # NIR 밴드와 RED 밴드 파일을 S3에서 읽어옴 (S3)
+    nir_band, nir_transform, nir_width, nir_height = read_tif_from_s3(bucket_name, nir_key)
+    red_band, red_transform, red_width, red_height = read_tif_from_s3(bucket_name, red_key)
+
+    # NDVI 계산
+    ndvi_result = calculate_ndvi(nir_band, red_band)
+
     # 선택된 타일에 해당하는 NDVI 부분 가져오기
-    ndvi_tile = ndvi_result[
-        tile_row * tile_height:(tile_row + 1) * tile_height,
-        tile_col * tile_width:(tile_col + 1) * tile_width
-    ]
+    ndvi_tile = ndvi_result
+    # ndvi_result[
+    #     tile_row * tile_height:(tile_row + 1) * tile_height,
+    #     tile_col * tile_width:(tile_col + 1) * tile_width
+    # ]
+    # 타일 크기가 맞지 않는 경우를 위해 경계값 처리
 
     # NDVI 결과 시각화 (모든 테마 제거)
     cax = ax.imshow(ndvi_tile, cmap='RdYlGn')
