@@ -171,8 +171,8 @@ with col1:
     st.subheader("Thumbnail for Selected Tile")
     
     # BR.jpg 파일 열기
-    # img = Image.open(thumbnail_path) # 로컬
-    img = show_image_from_s3(bucket_name, thumbnail_key, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) # S3
+    img = Image.open(thumbnail_path) # 로컬
+    # img = show_image_from_s3(bucket_name, thumbnail_key, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) # S3
     
     # 이미지 크기 계산
     img_width, img_height = img.size
