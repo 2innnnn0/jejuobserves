@@ -51,7 +51,9 @@ def analyze_ndvi(ndvi_result):
             "messages": [
                 {
                     "role": "user",
-                    "content": """주어진 NDVI 데이터를 기반으로 농지 활용 상태를 분류해 주세요. 
+                    "content": """
+                            올린 이미지들은 같은 장소의 위성이미지야. 하나는 그냥 RGB, 하나는 NVDI로 계산한 이미지야.
+                            먼저 이미지를 설명해주세요. 그 후 주어진 NDVI 데이터를 기반으로 농지 활용 상태를 분류해 주세요. 
                             1. 해당 지역이 농지로 잘 활용되고 있을 확률을 계산해 주세요.
                             2. 농지로 잘 활용되고 있는지(잘 활용됨 / 잘 활용되지 않음) 분류하고, 각 범주에 대한 신뢰도(확률)도 제공해 주세요.
 
@@ -62,6 +64,8 @@ def analyze_ndvi(ndvi_result):
                             2. 상세 설명
                             - 초보자를 위해 NVDI를 해석하는 방법 안내
                             - 그 외 확률값에 따른 상세 설명 
+
+                            모든 답은 한글로 해주세요.
                             """
                 },
                 {
@@ -72,11 +76,26 @@ def analyze_ndvi(ndvi_result):
             "max_tokens": 1000
         }
 
-        # OpenAI API 요청 전송
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+        try:
+            # OpenAI API 요청 전송
+            response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+            response_json = response.json()
+
+            # 'choices' 키가 있는지 확인하고 처리
+            if 'choices' in response_json:
+                result = response_json['choices'][0]['message']['content']
+            else:
+                # 로그 출력 및 예외 발생
+                st.error(f"OpenAI API 응답에 'choices' 키가 없습니다. 응답 내용: {json.dumps(response_json, indent=2)}")
+                raise KeyError("'choices' 키가 OpenAI API 응답에 존재하지 않습니다.")
         
-        # API 응답 처리
-        result = response.json()['choices'][0]['message']['content']
+        except requests.exceptions.RequestException as e:
+            st.error(f"API 요청 중 오류가 발생했습니다: {e}")
+            st.error(f"응답 내용: {response.text}")
+            raise
+        except KeyError as e:
+            st.error(f"응답 데이터 처리 중 오류가 발생했습니다: {e}")
+            raise
     
     st.success("AI 인식이 끝났습니다")
     return result
