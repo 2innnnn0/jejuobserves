@@ -12,6 +12,7 @@ from io import BytesIO
 import json
 import boto3
 from rasterio.io import MemoryFile
+from analyze_ndvi import analyze_ndvi
 
 # OpenAI API 키 설정 (환경 변수로 설정하거나 여기에 직접 추가)
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -63,42 +64,7 @@ def read_tif_from_s3(bucket_name, key):
 # # 전체 NIR 및 RED 파일 경로 (로컬)
 # nir_file = "data/PN.tif"
 # red_file = "data/PR.tif"
-# thumbnail_path = "data/demo_adjusted_image.jpg"
-
-# OpenAI API 호출 함수
-# def analyze_ndvi(ndvi_result):
-#     with st.spinner("AI가 농지를 검토하고 있어요! 🥕"):
-#         time.sleep(2)
-
-#         headers = {
-#             "Content-Type": "application/json",
-#             "Authorization": f"Bearer {OPENAI_API_KEY}"
-#         }
-
-#         payload = {
-#             "model": "gpt-4o-mini",
-#             "messages": [
-#                 {
-#                     "role": "user",
-#                     "content": f"""
-#                     주어진 NDVI 데이터를 기반으로 농지 활용 상태를 분류해 주세요.
-#                     NDVI 값: {ndvi_result.tolist()}
-#                     """
-#                 }
-#             ],
-#             "max_tokens": 1000
-#         }
-
-#         try:
-#             response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-#             response.raise_for_status()  # 에러 발생 시 예외 처리
-#             result = response.json()['choices'][0]['message']['content']
-#         except requests.exceptions.RequestException as e:
-#             st.error(f"API 요청에 실패했습니다: {e}")
-#             return None
-
-#     st.success("AI 인식이 끝났습니다")
-#     return result
+thumbnail_path = "data/demo_adjusted_image.jpg"
 
 # DecompressionBombWarning을 방지하기 위해 사이즈 제한을 제거
 Image.MAX_IMAGE_PIXELS = None
@@ -138,8 +104,8 @@ def calculate_ndvi(nir_band, red_band):
 num_tiles = 16 # st.slider("Number of tiles per row and column", min_value=2, max_value=16, value=8)
 
 # 썸네일 이미지 로드
-# thumbnail_img = Image.open(thumbnail_path) # 로컬
-thumbnail_img = show_image_from_s3(bucket_name, thumbnail_key, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) # S3
+thumbnail_img = Image.open(thumbnail_path) # 로컬
+# thumbnail_img = show_image_from_s3(bucket_name, thumbnail_key, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) # S3
 img_width, img_height = thumbnail_img.size
 
 # 이미지에 그리기 위한 ImageDraw 객체 생성
@@ -275,10 +241,10 @@ with col2:
     st.pyplot(fig)
 
 # AI 분석하기
-# if st.button("AI 분석하기"):
-#     # AI 분석 호출
-#     ai_result = analyze_ndvi(ndvi_result)
+if st.button("AI 분석하기"):
+    # AI 분석 호출
+    ai_result = analyze_ndvi(ndvi_result)
 
-#     # AI 결과 출력
-#     st.subheader("AI Analysis Result")
-#     st.write(ai_result)
+    # AI 결과 출력
+    st.subheader("AI Analysis Result")
+    st.write(ai_result)
